@@ -6,6 +6,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from datetime import datetime
 import time
+import re
 
 driver = webdriver.Chrome()
 driver.maximize_window()
@@ -30,6 +31,7 @@ while arrival_date_header.get_attribute('aria-sort') != 'descending':
     arrival_date_header.click()
 
 results = []
+stock_number_regex = re.compile(r'STK[0-9]+', re.IGNORECASE)
 
 while True:
     next_button = driver.find_element(By.ID, 'vehiclesw_next')
@@ -39,12 +41,16 @@ while True:
 
     for row in vehicles_table_rows:
         arrival_date_td = row.find_element(By.CSS_SELECTOR, "[data-label='Arrived']")
-        # wayne doesn't put their stock numbers here, TODO parse this
-        stock_number_td = driver.execute_script('return arguments[0].nextElementSibling', arrival_date_td)
         try:
             image_url = row.find_element(By.TAG_NAME, 'a').get_attribute('href')
+            stock_number_match = stock_number_regex.search(image_url)
+            if stock_number_match:
+                stock_number = stock_number_match.group()
+            else:
+                stock_number = None
         except NoSuchElementException:
             image_url = None
+            stock_number = None
         record = {
             'year': row.find_element(By.CSS_SELECTOR, "[data-label='Year']").text,
             'make': row.find_element(By.CSS_SELECTOR, "[data-label='Make']").text,
@@ -53,7 +59,7 @@ while True:
             'reference': row.find_element(By.CSS_SELECTOR, "[data-label='Reference']").text,
             'row': row.find_element(By.CSS_SELECTOR, "[data-label='Row']").text,
             'arrival_date': datetime.strptime(arrival_date_td.text, '%m/%d/%y'),
-            'stock_number': stock_number_td.text,
+            'stock_number': stock_number,
             'image_url': image_url,
         }
         results.append(record)
