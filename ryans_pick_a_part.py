@@ -5,6 +5,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support.expected_conditions import staleness_of
 from datetime import datetime
+from time import sleep
 
 driver = webdriver.Chrome()
 driver.maximize_window()
@@ -37,6 +38,9 @@ for make in all_makes:
     inventory_table_rows = inventory_table_body.find_elements(By.TAG_NAME, 'tr')
     assert inventory_table_rows[0].text == 'YEAR MAKE MODEL COLOR ROW ARRIVAL DATE STOCK #'
     inventory_table_rows.pop(0)
+
+    if len(inventory_table_rows) < 5:
+        sleep(1) # avoid going faster than the browser can handle
 
     for row in inventory_table_rows:
         year_td = row.find_element(By.TAG_NAME, 'td')
